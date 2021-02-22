@@ -32,7 +32,7 @@ def timeseries_graph(mmm_dataset, p10 = None, p90 = None, ax = None, **kwargs):
         
     # SUBPLOT
     # plot the percentiles (.data isn't necessary but maybe helps speed it up??)
-    if p10.all() != None:
+    if p10 != None:
         ax.fill_between(p10.time.data, p10.data, p90.data, **kwargs)#, color='lightcoral')
     # plot the multi_model mean
     mmm_dataset.plot(color = 'k', ax=ax)#, **plt_kwargs)
@@ -62,16 +62,16 @@ def timeseries_graph(mmm_dataset, p10 = None, p90 = None, ax = None, **kwargs):
 
 
 # define function to plot figures for composite graphs 
-def SEA_plots(mmm_dataset, comp_dataset, p10 = None, p90 = None, color_cycle = None, ax = None, **plt_kwargs):
+def SEA_plots(mmm_dataset, comp_dataset, color_cycle, p10 = None, p90 = None, ax = None, **plt_kwargs):
     """Create subplots for a superposed epoch analysis (SEA) graph.  SEA graph is composed of time series of each eruption contained in the mmm_dataset and the composite (of all eruptions in the mmm_dataset).  Shading is used to show the 10th and 90th percentiles of the composite.   
     Return the axis.  
     
     Args:
         mmm_dataset (xarray): xarray of eruptions and the values (multi-model mean of climate variable) for each to be plotted
         comp_dataset (xarray): xarray of composite values (multi-eruption multi-model mean of climate variable) to be plotted
+        color_cycle (dict): dictionary of colours (as strings) 
         p10 (array): array of values of 10th percentile
         p90 (array): array of values of 90th percentile
-        color_cycle (dict): dictionary of colours (as strings) 
         ax (axis): axis
         **kwargs
     """
@@ -87,8 +87,9 @@ def SEA_plots(mmm_dataset, comp_dataset, p10 = None, p90 = None, color_cycle = N
     for v in mmm_dataset.volcano:
         mmm_dataset.sel(volcano=v).plot(ax=ax, label = v.data, color = color_cycle[i]) # plot the anomalies 
         i = i+1
-
-    ax.fill_between(p10.time.data, p10.data, p90.data, color='lightgrey')
+    
+    if p10 != None:
+        ax.fill_between(p10.time.data, p10.data, p90.data, color='lightgrey')
 
     comp_dataset.plot(color = 'k', ax=ax, label = 'Composite') 
 
@@ -190,6 +191,7 @@ def spatial_plot(rows, cols, dataset, cmax, times, titles, colours, units, std):
     cbar = plt.colorbar(C, orientation='horizontal', ax=axs, shrink=0.5, pad=0.05)
     cbar.ax.set_xlabel(f'{units}', fontsize=14)
     
+    
     return fig
 
 
@@ -274,3 +276,33 @@ def stats_table(stats_df, dataset, ax):
     header_0 = ax.table(cellText=[['']*len(header_times)], colLabels=header_times, loc='bottom', bbox=[0, 0.87, 0.834, 0.06])
     the_table = ax.table(cellText=stats_list, rowLabels=rows, colLabels=cols, loc='bottom',cellLoc='center', bbox=[0, -0.3, 1.0, 1.2])
     return ax
+
+
+def create_colorbar(plot, cax, levels, ticks = '', cbar_title = '', cbar_titleSize = 12, xtickSize = 12, rotation = 45,
+                   orientation = 'horizontal'):
+    """DESCRIPTION
+    plot: the plot that th cbar is refering to.
+    caxes: the colorbar axes.
+    levels: the levels on the plot
+    mpl.rcParams['text.usetex'] = False
+    """
+    # CODE
+    cbar = plt.colorbar(plot, cax = cax, orientation = orientation )#,norm = norm
+    cbar.set_ticks(levels)
+
+    # Tick label control
+    if type(ticks) == str(): # No custom ticks entered. Ticks are rounded level
+        tick_labels = np.round(levels,2)
+    else: # we do have custom ticks
+        tick_labels = ticks
+        
+    # Orientation control
+    if orientation == 'horizontal':
+        cbar.ax.set_xticklabels(tick_labels, fontsize = xtickSize, rotation = rotation)
+        cbar.ax.set_title(cbar_title, size = cbar_titleSize);
+    else:
+        cbar.ax.set_yticklabels(tick_labels, fontsize = xtickSize, rotation = rotation)
+        cbar.ax.set_ylabel(cbar_title, size = cbar_titleSize)
+        
+        
+        
